@@ -6,13 +6,12 @@
 
 class RandomizedTopologicalSort {
 private:
-	template< typename T > using URS = UniformRandomSelector< T >;
 	URS< int > urs_que;
 	
 public:
 	RandomizedTopologicalSort() {}
 	
-	std::vector< int > generate(std::vector< std::vector< int > > adj_list) {
+	std::vector< int > generate(std::vector< std::vector< int > >& adj_list) {
 		urs_que.clean();
 		
 		int n = adj_list.size();

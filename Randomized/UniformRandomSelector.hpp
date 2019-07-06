@@ -5,7 +5,8 @@
 #include <cassert>
 #include "XorShift.hpp"
 
-template< typename T > class UniformRandomSelector {
+template< typename T >
+class UniformRandomSelector {
 private:
 	XorShift rnd;
 	
@@ -31,7 +32,7 @@ public:
 	
 	T select() {
 		assert(n > 0);
-		int i = rnd.nextUInt(n);
+		int i = rnd.nextInt(n);
 		swap(data[i], data[--n]);
 		return data[n];
 	}
@@ -40,5 +41,7 @@ public:
 	
 	void clean() { n = 0; }
 };
+
+template< typename T > using URS = UniformRandomSelector< T >;
 
 #endif

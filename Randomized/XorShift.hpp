@@ -1,6 +1,8 @@
 #ifndef XOR_SHIFT_HPP
 #define XOR_SHIFT_HPP
 
+#include <cassert>
+
 struct XorShift {
 	unsigned int x, y, z, w;
 	
@@ -15,9 +17,10 @@ struct XorShift {
 		w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
 	}
 	
-	unsigned int nextUInt() { setNext(); return w; }
-	unsigned int nextUInt(unsigned int n) { return nextUInt() % n; }
-	double nextDouble() { return nextUInt() * (1.0 / 0xFFFFFFFFu); }
+	unsigned int nextInt() { setNext(); return w; }
+	unsigned int nextInt(unsigned int n) { return nextInt() % n; }
+	unsigned int nextInt(unsigned int a, unsigned int b) { assert(a <= b); return a + nextInt(b - a + 1); }
+	double nextDouble() { return nextInt() * (1.0 / 0xFFFFFFFFu); }
 };
 
 #endif
