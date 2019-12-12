@@ -18,7 +18,7 @@ using Edge = std::pair<size_t, size_t>;
 static const double PI = acos(-1);
 
 template<typename T> struct Point {
-	/* Point on the 2D-plane */
+	/*** Point on the 2D-plane ***/
 	T x, y;
 	size_t id;
 	
@@ -27,16 +27,20 @@ template<typename T> struct Point {
 };
 
 template<typename T> bool is_ccw(const Point<T>& a, const Point<T>& b, const Point<T>& c) {
-	/* Check whether the direction 'a->b->c' is counter-clockwise or not */
-	Point<T> ab = b - a, ac = c - a;
+	/*** Check whether the direction 'a->b->c' is counter-clockwise or not ***/
+	Point<T> ab = b - a;
+	Point<T> ac = c - a;
 	return ab.cross(ac) > 0;
 }
 
 template<typename T> struct Triangle {
-	/* Triangle with three points (vertices) 'a', 'b', and 'c' on the 2D-plane */
+	/*** Triangle with three points (vertices) 'a', 'b', and 'c' on the 2D-plane ***/
 	Point<T> a, b, c;
 	
-	void ccw_arrange() { if (!is_ccw(a, b, c)) std::swap(b, c); }
+	void ccw_arange() {
+		// Make the direction 'a->b->c' counter-clockwise
+		if (!is_ccw(a, b, c)) std::swap(b, c);
+	}
 	
 	bool has_point(const Point<T>& p) const {
 		if (!is_ccw(a, b, p)) return false;
@@ -47,13 +51,15 @@ template<typename T> struct Triangle {
 };
 
 template<typename T> struct RDD_Node {
-	/* Node of Region Decision Diagrams (RDDs) */
+	/*** Node of Region Decision Diagrams (RDDs) ***/
 	Triangle<T> t;
 	std::vector<size_t> ch;
+	
+	bool is_leaf() const { return ch.empty(); }
 };
 
 template<typename T> struct RDD {
-	/* Region Decision Diagram (RDD) */
+	/*** Region Decision Diagram (RDD) ***/
 	std::vector<RDD_Node<T>> node;
 	
 	void initialize(Triangle<T> root_t) {
@@ -61,37 +67,76 @@ template<typename T> struct RDD {
 		node = std::vector<RDD_Node<T>>(1, root);
 	}
 	
-	size_t find_leaf(const Point<T>& p) const {
-		size_t i = 0;
-		while (!node[i].ch.empty()) {
-			for (size_t j : node[i].ch) {
-				if (node[j].t.has_point(p)) {
-					i = j;
-					break;
-				}
-			}
-		}
+	size_t add_child(size_t k, const Triangle<T>& t) {
+		size_t i = node.size();
+		node[k].ch.push_back(i);
+		node.push_back(RDD_Node<T>{t, std::vector<size_t>()});
 		return i;
 	}
+	
+	size_t find_child(size_t k, const Point<T>& p) const {
+		for (size_t i : node[k].ch) if (node[i].t.has_point(p)) return i;
+		return std::numeric_limits<size_t>::max();
+	}
+	
+	const RDD_Node<T>& operator [] (int i) { return node[i]; }
 };
 
 template<typename T> Triangle<T> get_bounding_triangle(const std::vector<Point<T>>& P) {	
-	/* Make a bounding triangle of the given point set 'P' on the 2D-plane */
-	T min_x = std::numeric_limits<T>::max(), min_y = std::numeric_limits<T>::max();
-	T max_x = std::numeric_limits<T>::min(), max_y = std::numeric_limits<T>::min();
+	/*** Make a bounding triangle of the given point set 'P' on the 2D-plane ***/
+	T min_x = std::numeric_limits<T>::max();
+	T min_y = std::numeric_limits<T>::max();
+	
+	T max_x = std::numeric_limits<T>::min();
+	T max_y = std::numeric_limits<T>::min();
 	
 	for (const Point<T>& p : P) {
-		min_x = std::min(min_x, p.x); min_y = std::min(min_y, p.y);
-		max_x = std::max(max_x, p.x); max_y = std::max(max_y, p.y);
+		min_x = std::min(min_x, p.x);
+		min_y = std::min(min_y, p.y);
+		
+		max_x = std::max(max_x, p.x);
+		max_y = std::max(max_y, p.y);
 	}
 	
-	T cx = (max_x + min_x) / 2, cy = (max_y + min_y) / 2, r = std::max(max_x - min_x, max_y - min_y);
-	T dx = 2 * r * cos(PI * 30 / 180), dy = r;
-	return Triangle<T>{{cx, cy + 2 * r, P.size()}, {cx - dx, cy - dy, P.size() + 1}, {cx + dx, cy - dy, P.size() + 2}};
+	T cx = (max_x + min_x) / 2;
+	T cy = (max_y + min_y) / 2;
+	T r = std::max(max_x - min_x, max_y - min_y);
+	
+	T dx = 2 * r * cos(PI * 30 / 180);
+	T dy = r;
+	
+	Point<T> a{cx, cy + 2 * r, P.size()};
+	Point<T> b{cx - dx, cy - dy, P.size() + 1};
+	Point<T> c{cx + dx, cy - dy, P.size() + 2};
+	
+	return Triangle<T>{a, b, c};
+}
+
+template<typename T> void interior_division(RDD<T>& rdd, size_t k, const Point<T>& p) {
+	/*** Subdivide when p lies in the interior of rdd[k].t ***/
+	const Triangle<T>& t = rdd[k].t;
+	
+	Triangle<T> t1{t.a, t.b, p};
+	Triangle<T> t2{t.b, t.c, p};
+	Triangle<T> t3{t.c, t.a, p};
+	
+	t1.ccw_arange();
+	t2.ccw_arange();
+	t3.ccw_arange();
+	
+	size_t i1 = rdd.add_child(k, t1);
+	size_t i2 = rdd.add_child(k, t2);
+	size_t i3 = rdd.add_child(k, t3);
+	
+}
+
+template<typename T> void edge_division(RDD<T>& rdd, size_t k, const Point<T>& p) {
+	/*** Subdivide when p falls on an edge between two adjacent triangles in rdd[k].t.ch ***/	
+	
 }
 
 template<typename T> std::vector<Edge> delaunay_core(const std::vector<Point<T>>& P) {
-	/* Main process of the delaunay triangulation */	
+	/*** Main process of the delaunay triangulation ***/	
 	size_t n = P.size();
 	std::vector<size_t> id(n);
 	std::iota(id.begin(), id.end(), 0);
@@ -105,10 +150,21 @@ template<typename T> std::vector<Edge> delaunay_core(const std::vector<Point<T>>
 	
 	for (size_t i : id) {
 		const Point<T>& p = P[i];
-		size_t node_i = rdd.find_leaf(p);
+		
+		size_t k = 0;
+		while (!rdd[k].is_leaf()) {
+			size_t nxt = rdd.find_child(k, p);
+			if (nxt == std::numeric_limits<size_t>::max()) break;
+			k = nxt;
+		}
+		
+		std::cerr << k << std::endl; // debug
+		
+		if (rdd[k].is_leaf()) interior_division(rdd, k, p);
+		else edge_division(rdd, k, p);
 	}
 	
-	std::vector<Edge> ret;
+	std::vector<Edge> ret;	
 	return ret;
 }
 
