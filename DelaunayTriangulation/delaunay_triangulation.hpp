@@ -3,17 +3,17 @@
 
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
 #include <numeric>
 #include <utility>
 #include <random>
 #include <cmath>
 #include <limits>
+#include <chrono>
 #include <cassert>
 
 namespace delaunay {
-
-using Edge = std::pair<size_t, size_t>;
 
 static const double PI = acos(-1);
 
@@ -82,37 +82,31 @@ template<typename T> struct RDD {
 	const RDD_Node<T>& operator [] (int i) { return node[i]; }
 };
 
-template<typename T> Triangle<T> get_bounding_triangle(const std::vector<Point<T>>& P) {	
-	/*** Make a bounding triangle of the given point set 'P' on the 2D-plane ***/
-	T min_x = std::numeric_limits<T>::max();
-	T min_y = std::numeric_limits<T>::max();
-	
-	T max_x = std::numeric_limits<T>::min();
-	T max_y = std::numeric_limits<T>::min();
-	
-	for (const Point<T>& p : P) {
-		min_x = std::min(min_x, p.x);
-		min_y = std::min(min_y, p.y);
-		
-		max_x = std::max(max_x, p.x);
-		max_y = std::max(max_y, p.y);
+using Edge = std::pair<size_t, size_t>;
+
+struct EdgeHash {
+	size_t operator () (const Edge& e) const {
+		static const size_t FIXED_RANDOM = std::chrono::steady_clock::now().time_since_epoch().count();
+		size_t key = (e.first << 16) ^ e.second;
+		key ^= FIXED_RANDOM;
+		return key ^ (key >> 16);
 	}
-	
-	T cx = (max_x + min_x) / 2;
-	T cy = (max_y + min_y) / 2;
-	T r = std::max(max_x - min_x, max_y - min_y);
-	
-	T dx = 2 * r * cos(PI * 30 / 180);
-	T dy = r;
-	
-	Point<T> a{cx, cy + 2 * r, P.size()};
-	Point<T> b{cx - dx, cy - dy, P.size() + 1};
-	Point<T> c{cx + dx, cy - dy, P.size() + 2};
-	
-	return Triangle<T>{a, b, c};
+};
+
+using Edge2Triangles = std::unordered_map<Edge, std::vector<size_t>, EdgeHash>;
+
+Edge make_edge(size_t a, size_t b) {
+	if (a > b) std::swap(a, b);
+	return Edge(a, b);
 }
 
-template<typename T> void interior_division(RDD<T>& rdd, size_t k, const Point<T>& p) {
+template<typename T> void register_triangle(Edge2Triangles& e2t, const Triangle<T>& t, size_t k) {
+	e2t[make_edge(t.a.id, t.b.id)].push_back(k);
+	e2t[make_edge(t.b.id, t.c.id)].push_back(k);
+	e2t[make_edge(t.c.id, t.a.id)].push_back(k);
+}
+
+template<typename T> void interior_division(Edge2Triangles& e2t, RDD<T>& rdd, size_t k, const Point<T>& p) {
 	/*** Subdivide when p lies in the interior of rdd[k].t ***/
 	const Triangle<T>& t = rdd[k].t;
 	
@@ -124,13 +118,18 @@ template<typename T> void interior_division(RDD<T>& rdd, size_t k, const Point<T
 	t2.ccw_arange();
 	t3.ccw_arange();
 	
-	size_t i1 = rdd.add_child(k, t1);
-	size_t i2 = rdd.add_child(k, t2);
-	size_t i3 = rdd.add_child(k, t3);
+	size_t k1 = rdd.add_child(k, t1);
+	size_t k2 = rdd.add_child(k, t2);
+	size_t k3 = rdd.add_child(k, t3);
 	
+	register_triangle(e2t, t1, k1);
+	register_triangle(e2t, t2, k2);
+	register_triangle(e2t, t3, k3);
+	
+	// TODO : legalize_edge method
 }
 
-template<typename T> void edge_division(RDD<T>& rdd, size_t k, const Point<T>& p) {
+template<typename T> void edge_division(Edge2Triangles& e2t, RDD<T>& rdd, size_t k, const Point<T>& p) {
 	/*** Subdivide when p falls on an edge between two adjacent triangles in rdd[k].t.ch ***/	
 	
 }
@@ -145,23 +144,30 @@ template<typename T> std::vector<Edge> delaunay_core(const std::vector<Point<T>>
 	std::mt19937 engine(seed_gen());
 	std::shuffle(id.begin(), id.end(), engine);
 	
+	Edge2Triangles e2t;
 	RDD<T> rdd;
-	rdd.initialize(get_bounding_triangle(P));
+	
+	T r = std::numeric_limits<T>::min();
+	for (const Point<T>& p : P) {
+		r = std::max(r, std::abs(p.x));
+		r = std::max(r, std::abs(p.y));
+	}
+	Point<T> a{4 * r, 0};
+	Point<T> b{0, 4 * r};
+	Point<T> c{-4 * r, -4 * r};
+	rdd.initialize(Triangle<T>{a,b,c});
 	
 	for (size_t i : id) {
-		const Point<T>& p = P[i];
-		
+		const Point<T>& p = P[i];		
 		size_t k = 0;
 		while (!rdd[k].is_leaf()) {
 			size_t nxt = rdd.find_child(k, p);
 			if (nxt == std::numeric_limits<size_t>::max()) break;
 			k = nxt;
 		}
-		
 		std::cerr << k << std::endl; // debug
-		
-		if (rdd[k].is_leaf()) interior_division(rdd, k, p);
-		else edge_division(rdd, k, p);
+		if (rdd[k].is_leaf()) interior_division(e2t, rdd, k, p);
+		else edge_division(e2t, rdd, k, p);
 	}
 	
 	std::vector<Edge> ret;	
