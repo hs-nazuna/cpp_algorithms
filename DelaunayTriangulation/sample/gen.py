@@ -1,6 +1,7 @@
 import random
+import sys
 
-n = 10
+n = int(sys.argv[1])
 print(n)
 for i in range(n):
-	print(random.randint(0, 1000), random.randint(0, 1000))
+	print(random.random(), random.random())
