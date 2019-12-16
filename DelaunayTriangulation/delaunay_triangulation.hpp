@@ -172,7 +172,7 @@ private:
 		}
 	}
 	
-	void interior_division(size_t k, size_t tar) {
+	void sub_division(size_t k, size_t tar) {
 		Triangle t1 = make_triangle(T[k].a, T[k].b, tar);
 		Triangle t2 = make_triangle(T[k].b, T[k].c, tar);
 		Triangle t3 = make_triangle(T[k].c, T[k].a, tar);
@@ -269,7 +269,7 @@ public:
 					k = nxt;
 				}
 				if (CH[k].empty()) {
-					interior_division(k, tar);
+					sub_division(k, tar);
 					aranged = true;
 				}
 				else {
