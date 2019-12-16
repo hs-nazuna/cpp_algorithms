@@ -242,7 +242,7 @@ public:
 		P.push_back(Point{-3.1 * r, -3.1 * r});
 	}
 	
-	void core() {
+	void execute() {
 		/*** Core algorithm ***/
 		std::vector<size_t> id(n);
 		std::iota(id.begin(), id.end(), size_t(0));
@@ -283,6 +283,8 @@ public:
 					if (cnt >= 100) aranged = true;
 				}
 			}
+			P[tar].x = px;
+			P[tar].y = py;
 		}
 		
 		modify_convexity();

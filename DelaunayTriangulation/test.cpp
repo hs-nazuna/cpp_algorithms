@@ -10,6 +10,6 @@ int main() {
 	for (int i=0; i<n; ++i) std::cin >> x[i] >> y[i];
 	
 	delaunay::DelaunayTriangulation DT(x, y);
-	DT.core();
+	DT.execute();
 	DT.dump(std::cout);
 }
