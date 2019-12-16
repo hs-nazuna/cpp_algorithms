@@ -18,7 +18,6 @@
 namespace delaunay {
 
 class DelaunayTriangulation {	
-	/*** Geometry ***/
 	struct Point {
 		/*** Point on the 2D-plane ***/
 		double x, y;
@@ -35,10 +34,12 @@ class DelaunayTriangulation {
 	double cross(Point a, Point b) const { return a.x * b.y - a.y * b.x; }
 	bool is_ccw(size_t a, size_t b, size_t c) const { return cross(P[b] - P[a], P[c] - P[a]) > 0; }
 	
+	/*** Edge connecting two points ***/
 	using Edge = std::pair<size_t, size_t>;
 	Edge make_edge(size_t a, size_t b) const { return Edge(std::min(a,b), std::max(a,b)); }
 	
 	bool point_on_edge(Edge e, size_t tar) const {
+		/*** Check wheter a point falls on an edge ***/
 		Point pa = P[e.second] - P[e.first], pb = P[tar] - P[e.first];
 		if (cross(pa, pb) != 0) return false;
 		if (dot(pa, pb) < 0) return false;
@@ -64,6 +65,7 @@ class DelaunayTriangulation {
 	}
 	
 	bool point_in_triangle(size_t tar, const Triangle& t) const {
+		/*** Check wheter a point lies in an triangle or not ***/
 		if (!is_ccw(t.a, t.b, tar)) return false;
 		if (!is_ccw(t.b, t.c, tar)) return false;
 		if (!is_ccw(t.c, t.a, tar)) return false;
@@ -78,6 +80,7 @@ private:
 	std::vector<Edge> edge;
 	
 	size_t rdd_add_child(size_t k, const Triangle& t) {
+		/*** Add a child triangle for T[k] ***/
 		size_t new_k = T.size();
 		T.push_back(t);
 		CH.push_back(std::list<size_t>());
@@ -86,6 +89,7 @@ private:
 	}
 	
 	size_t rdd_add_child(size_t k1, size_t k2, const Triangle& t) {
+		/*** Add a child triangle for T[k1] and T[k2] ***/
 		size_t new_k = T.size();
 		T.push_back(t);
 		CH.push_back(std::list<size_t>());
@@ -95,12 +99,14 @@ private:
 	}
 	
 	size_t find_child(size_t k, size_t tar) const {
+		/*** Find child triangle of T[k] where P[tar] lies in ***/
 		for (size_t i : CH[k]) if (point_in_triangle(tar, T[i])) return i;
 		return std::numeric_limits<size_t>::max();
 	}
 	
 private:	
 	struct EdgeHash {
+		/*** Hash function for edges ***/
 		size_t operator () (const Edge& e) const {
 			static const size_t FIXED_RANDOM = std::chrono::steady_clock::now().time_since_epoch().count();
 			size_t key = (e.first << 16) ^ e.second;
@@ -109,15 +115,18 @@ private:
 		}
 	};
 	
+	// Maps an edge to its incident triangles
 	std::unordered_map<Edge, std::set<size_t>, EdgeHash> e2t;
 	
 	void register_triangle(size_t k, const Triangle& t) {
+		/*** Register a new triangle ***/
 		e2t[make_edge(t.a, t.b)].insert(k);
 		e2t[make_edge(t.b, t.c)].insert(k);
 		e2t[make_edge(t.c, t.a)].insert(k);
 	}
 	
 	void unregister_triangle(size_t k, const Triangle& t) {
+		/*** Unregister an old triangle ***/
 		e2t[make_edge(t.a, t.b)].erase(k);
 		e2t[make_edge(t.b, t.c)].erase(k);
 		e2t[make_edge(t.c, t.a)].erase(k);		
@@ -125,6 +134,7 @@ private:
 	
 private:
 	bool is_ilegal(Edge e, size_t c, size_t tar) {
+		/*** Check wheter an edge is ilegal or not ***/
 		size_t a = e.first, b = e.second;
 		
 		Point s1 = (P[a] + P[b]) / 2.;
@@ -144,6 +154,7 @@ private:
 	}
 	
 	void legalize_edge(size_t piv, Edge e) {
+		/*** Legalize an edge with pivot P[piv] ***/
 		if (e2t.count(e) == 0) return;
 		if (e2t[e].size() != 2) return;
 		
@@ -173,6 +184,7 @@ private:
 	}
 	
 	void sub_division(size_t k, size_t tar) {
+		/*** Divide triangle T[k] by P[tar] ***/
 		Triangle t1 = make_triangle(T[k].a, T[k].b, tar);
 		Triangle t2 = make_triangle(T[k].b, T[k].c, tar);
 		Triangle t3 = make_triangle(T[k].c, T[k].a, tar);
@@ -192,7 +204,8 @@ private:
 		legalize_edge(tar, make_edge(T[k].c, T[k].a));
 	}
 	
-	void modify_convexity() {	
+	void modify_convexity() {
+		/*** Modify edges of the bounding convex hull ***/
 		for (size_t a=n; a<=n+2; ++a) {
 			for (size_t b=0; b<n; ++b) {
 				Edge e(b, a);
@@ -237,6 +250,7 @@ public:
 			r = std::max(r, std::abs(P[i].y));
 		}
 		
+		// Add three vertices of the initial bounding triangle
 		P.push_back(Point{3.1 * r, 0});
 		P.push_back(Point{0, 3.1 * r});
 		P.push_back(Point{-3.1 * r, -3.1 * r});
@@ -246,10 +260,13 @@ public:
 		/*** Core algorithm ***/
 		std::vector<size_t> id(n);
 		std::iota(id.begin(), id.end(), size_t(0));
+		
+		// Random ordering
 		std::random_device seed_gen;
 		std::mt19937 engine(seed_gen());
 		std::shuffle(id.begin(), id.end(), engine);
 		
+		// Initialize each data structure
 		T = std::vector<Triangle>();
 		CH = std::vector<std::list<size_t>>();
 		T.push_back(make_triangle(n, n+1, n+2));
@@ -257,22 +274,15 @@ public:
 		register_triangle(0, T[0]);
 		e2t = std::unordered_map<Edge, std::set<size_t>, EdgeHash>();
 		
+		// Main iteration
 		for (size_t tar : id) {
-			bool aranged = false;
 			int cnt = 0;
 			double px = P[tar].x, py = P[tar].y;
-			while (!aranged) {
-				size_t k = 0;
-				while (!CH[k].empty()) {
-					size_t nxt = find_child(k, tar);
-					if (nxt == std::numeric_limits<size_t>::max()) break;
-					k = nxt;
-				}
-				if (CH[k].empty()) {
-					sub_division(k, tar);
-					aranged = true;
-				}
-				else {
+			size_t k = 0;
+			while (!CH[k].empty()) {
+				size_t nxt = find_child(k, tar);
+				if (nxt == std::numeric_limits<size_t>::max()) {
+					// P[tar] perturbates when it falls on an edge
 					std::uint32_t rndx = 1 + engine() % 1000;
 					rndx *= (engine() % 2 == 0 ? 1 : -1);
 					P[tar].x = px + 1e-5 * rndx;
@@ -280,15 +290,21 @@ public:
 					rndy *= (engine() % 2 == 0 ? 1 : -1);
 					P[tar].y = py + 1e-5 * rndy;
 					++cnt;
-					if (cnt >= 100) aranged = true;
+					if (cnt >= 100) break;
+				}
+				else {
+					k = nxt;
 				}
 			}
+			if (CH[k].empty()) 	sub_division(k, tar);
 			P[tar].x = px;
 			P[tar].y = py;
 		}
 		
+		// Modify edges of the bounding convex hull
 		modify_convexity();
 		
+		// Save the solution
 		edge = std::vector<Edge>();
 		for (auto it : e2t) {
 			Edge e = it.first;
