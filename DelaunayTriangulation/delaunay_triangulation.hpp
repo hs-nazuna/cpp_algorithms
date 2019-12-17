@@ -235,8 +235,18 @@ private:
 		}		
 	}
 	
+private:
+	std::uint32_t seed;
+	
+	std::uint32_t xor128() {
+		static std::uint32_t x = seed, y = 362436069, z = 521288629, w = 88675123;
+		std::uint32_t t = (x ^ (x << 11));
+		x = y; y = z; z = w;
+		return (w = (w ^ (w >> 19)) ^ (t ^ (t >> 8)));
+	}
+	
 public:
-	DelaunayTriangulation(const std::vector<double>& x, const std::vector<double>& y) {
+	DelaunayTriangulation(const std::vector<double>& x, const std::vector<double>& y, uint32_t seed_ = 123456789) {
 		n = x.size();
 		P = std::vector<Point>(n);
 		for (size_t i=0; i<n; ++i) {
@@ -254,17 +264,20 @@ public:
 		P.push_back(Point{3.1 * r, 0});
 		P.push_back(Point{0, 3.1 * r});
 		P.push_back(Point{-3.1 * r, -3.1 * r});
+		
+		seed = seed_;
 	}
 	
-	void execute() {
+	void execute(double min_delta = 1e-5, double max_delta = 1e-2, int max_miss_count = 30) {
 		/*** Core algorithm ***/
+		
+		// Random reordering
 		std::vector<size_t> id(n);
 		std::iota(id.begin(), id.end(), size_t(0));
-		
-		// Random ordering
-		std::random_device seed_gen;
-		std::mt19937 engine(seed_gen());
-		std::shuffle(id.begin(), id.end(), engine);
+		for (size_t i=0; i<n; ++i) {
+			size_t j = xor128() % (n - i);
+			std::swap(id[j], id[n - i - 1]);
+		}
 		
 		// Initialize each data structure
 		T = std::vector<Triangle>();
@@ -276,27 +289,27 @@ public:
 		
 		// Main iteration
 		for (size_t tar : id) {
-			int cnt = 0;
+			int miss_count = 0;
 			double px = P[tar].x, py = P[tar].y;
 			size_t k = 0;
 			while (!CH[k].empty()) {
 				size_t nxt = find_child(k, tar);
 				if (nxt == std::numeric_limits<size_t>::max()) {
+					++miss_count;
+					if (miss_count >= max_miss_count) break;
 					// P[tar] perturbates when it falls on an edge
-					std::uint32_t rndx = 1 + engine() % 1000;
-					rndx *= (engine() % 2 == 0 ? 1 : -1);
-					P[tar].x = px + 1e-5 * rndx;
-					std::uint32_t rndy = 1 + engine() % 1000;
-					rndy *= (engine() % 2 == 0 ? 1 : -1);
-					P[tar].y = py + 1e-5 * rndy;
-					++cnt;
-					if (cnt >= 100) break;
+					double dx = min_delta + (max_delta - min_delta) * xor128() / std::numeric_limits<std::uint32_t>::max();
+					double dy = min_delta + (max_delta - min_delta) * xor128() / std::numeric_limits<std::uint32_t>::max();
+					dx *= (xor128() % 2 == 0 ? 1 : -1);
+					dy *= (xor128() % 2 == 0 ? 1 : -1);
+					P[tar].x = px + dx;
+					P[tar].y = py + dy;
 				}
 				else {
 					k = nxt;
 				}
 			}
-			if (CH[k].empty()) 	sub_division(k, tar);
+			if (CH[k].empty()) sub_division(k, tar);
 			P[tar].x = px;
 			P[tar].y = py;
 		}
