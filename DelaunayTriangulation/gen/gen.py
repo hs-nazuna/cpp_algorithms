@@ -2,9 +2,13 @@ import random
 import sys
 
 n = int(sys.argv[1])
+c_min = int(sys.argv[2])
+c_max = int(sys.argv[3])
 P = set()
 while n > 0:
-	p = (round(random.random(), 3), round(random.random(), 3))
+	x = c_min + (c_max - c_min) * random.random()
+	y = c_min + (c_max - c_min) * random.random()
+	p = (round(x, 3), round(y, 3))
 	if p in P:
 		continue;
 	P.add(p)

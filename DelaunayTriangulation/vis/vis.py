@@ -21,13 +21,12 @@ for i in range(m):
 	edge.append([(x[a], y[a]), (x[b], y[b])])
 
 # Visualize
-fig = plt.figure(figsize=(10,10))
-ax = fig.add_subplot(1,1,1)
-cx, cy = np.mean(x), np.mean(y)
-delta_x, delta_y = np.max(x) - np.min(x), np.max(y) - np.min(y)
-delta = max(delta_x, delta_y) * 1.25 / 2
-ax.set_xlim(cx - delta, cx + delta)
-ax.set_ylim(cy - delta, cy + delta)
+fig = plt.figure(figsize=(5,5))
+ax = fig.add_axes([0.1,0.1,0.85,0.85])#add_subplot(1,1,1)
+xy_max = max(np.max(x), np.max(y)) + 1
+xy_min = min(np.min(x), np.min(y)) - 1
+ax.set_xlim(xy_min, xy_max)
+ax.set_ylim(xy_min, xy_max)
 ax.scatter(x, y, s=20)
 ax.add_collection(mc.LineCollection(edge))
 plt.savefig(sys.argv[3])

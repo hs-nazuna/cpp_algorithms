@@ -59,5 +59,5 @@ int main() {
 	double mst_DT = euclid_mst(x, y, edge);
 	std::cout << "Using all edges: " << mst_all << std::endl;
 	std::cout << "Using delaunay triangulation: " << mst_DT << std::endl;
-	std::cout << "Erroro: " << std::abs(mst_all - mst_DT) << std::endl;
+	std::cout << "Error: " << std::abs(mst_all - mst_DT) << std::endl;
 }
