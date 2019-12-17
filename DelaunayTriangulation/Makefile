@@ -1,5 +1,8 @@
 test: test.cpp delaunay_triangulation.hpp
 	g++ -std=c++17 -O3 -o test test.cpp
 
+verify: mst_verify.cpp delaunay_triangulation.hpp
+	g++ -std=c++17 -O3 -o verify mst_verify.cpp
+
 clean:
-	rm test
+	rm test verify

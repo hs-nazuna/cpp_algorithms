@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "delaunay_triangulation.hpp"
 
 int main() {
