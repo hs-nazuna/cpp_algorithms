@@ -38,19 +38,9 @@ class DelaunayTriangulation {
 	using Edge = std::pair<size_t, size_t>;
 	Edge make_edge(size_t a, size_t b) const { return Edge(std::min(a,b), std::max(a,b)); }
 	
-	bool point_on_edge(Edge e, size_t tar) const {
-		/*** Check wheter a point falls on an edge ***/
-		Point pa = P[e.second] - P[e.first], pb = P[tar] - P[e.first];
-		if (cross(pa, pb) != 0) return false;
-		if (dot(pa, pb) < 0) return false;
-		if (pa.norm() < pb.norm()) return false;
-		return true;
-	}
-	
 	struct Triangle {
 		/*** Triangle on the 2D-plane ***/
-		size_t a, b, c;
-		
+		size_t a, b, c;		
 		size_t opposite(Edge e) const {
 			if (e.first != a and e.second != a) return a;
 			if (e.first != b and e.second != b) return b;
@@ -79,7 +69,7 @@ private:
 	std::vector<std::list<size_t>> CH;
 	std::vector<Edge> edge;
 	
-	size_t rdd_add_child(size_t k, const Triangle& t) {
+	size_t add_child_triangle(size_t k, const Triangle& t) {
 		/*** Add a child triangle for T[k] ***/
 		size_t new_k = T.size();
 		T.push_back(t);
@@ -88,7 +78,7 @@ private:
 		return new_k;
 	}
 	
-	size_t rdd_add_child(size_t k1, size_t k2, const Triangle& t) {
+	size_t add_child_triangle(size_t k1, size_t k2, const Triangle& t) {
 		/*** Add a child triangle for T[k1] and T[k2] ***/
 		size_t new_k = T.size();
 		T.push_back(t);
@@ -109,8 +99,7 @@ private:
 		/*** Hash function for edges ***/
 		size_t operator () (const Edge& e) const {
 			static const size_t FIXED_RANDOM = std::chrono::steady_clock::now().time_since_epoch().count();
-			size_t key = (e.first << 16) ^ e.second;
-			key ^= FIXED_RANDOM;
+			size_t key = ((e.first << 16) ^ e.second) ^ FIXED_RANDOM;
 			return key ^ (key >> 16);
 		}
 	};
@@ -138,18 +127,18 @@ private:
 		size_t a = e.first, b = e.second;
 		
 		Point s1 = (P[a] + P[b]) / 2.;
-		Point t1 = s1 + (P[b] - P[a]).normal();
-		
 		Point s2 = (P[b] + P[c]) / 2.;
+		Point t1 = s1 + (P[b] - P[a]).normal();
 		Point t2 = s2 + (P[c] - P[b]).normal();
 		
 		double d1 = cross(t2 - s2, s2 - s1);
 		double d2 = cross(t2 - s2, t1 - s1);
-		Point center = s1 + (t1 - s1) * d1 / d2;
+		Point ct = s1 + (t1 - s1) * d1 / d2;
 		
-		double x = center.x, y = center.y;
-		double dx1 = P[a].x - x, dy1 = P[a].y - y;
-		double dx2 = P[tar].x - x, dy2 = P[tar].y - y;
+		double dx1 = P[a].x - ct.x;
+		double dy1 = P[a].y - ct.y;
+		double dx2 = P[tar].x - ct.x;
+		double dy2 = P[tar].y - ct.y;
 		return (dx1 * dx1 + dy1 * dy1) > (dx2 * dx2 + dy2 * dy2);
 	}
 	
@@ -171,8 +160,8 @@ private:
 			Triangle t1 = make_triangle(e.first, a, b);
 			Triangle t2 = make_triangle(e.second, a, b);
 			
-			size_t k1_ = rdd_add_child(k1, k2, t1);
-			size_t k2_ = rdd_add_child(k1, k2, t2);
+			size_t k1_ = add_child_triangle(k1, k2, t1);
+			size_t k2_ = add_child_triangle(k1, k2, t2);
 			
 			register_triangle(k1_, t1);
 			register_triangle(k2_, t2);
@@ -185,15 +174,15 @@ private:
 	
 	void sub_division(size_t k, size_t tar) {
 		/*** Divide triangle T[k] by P[tar] ***/
+		unregister_triangle(k, T[k]);
+		
 		Triangle t1 = make_triangle(T[k].a, T[k].b, tar);
 		Triangle t2 = make_triangle(T[k].b, T[k].c, tar);
 		Triangle t3 = make_triangle(T[k].c, T[k].a, tar);
 		
-		unregister_triangle(k, T[k]);
-		
-		size_t k1 = rdd_add_child(k, t1);
-		size_t k2 = rdd_add_child(k, t2);
-		size_t k3 = rdd_add_child(k, t3);
+		size_t k1 = add_child_triangle(k, t1);
+		size_t k2 = add_child_triangle(k, t2);
+		size_t k3 = add_child_triangle(k, t3);
 		
 		register_triangle(k1, t1);
 		register_triangle(k2, t2);
@@ -226,8 +215,8 @@ private:
 				Triangle t1 = make_triangle(a, c, d);
 				Triangle t2 = make_triangle(b, c, d);
 				
-				size_t k1_ = rdd_add_child(k1, k2, t1);
-				size_t k2_ = rdd_add_child(k1, k2, t2);
+				size_t k1_ = add_child_triangle(k1, k2, t1);
+				size_t k2_ = add_child_triangle(k1, k2, t2);
 				
 				register_triangle(k1_, t1);
 				register_triangle(k2_, t2);
@@ -298,8 +287,8 @@ public:
 					++miss_count;
 					if (miss_count >= max_miss_count) break;
 					// P[tar] perturbates when it falls on an edge
-					double dx = min_delta + (max_delta - min_delta) * xor128() / std::numeric_limits<std::uint32_t>::max();
-					double dy = min_delta + (max_delta - min_delta) * xor128() / std::numeric_limits<std::uint32_t>::max();
+					double dx = min_delta + (max_delta - min_delta) * xor128() / 0xFFFFFFFFu;
+					double dy = min_delta + (max_delta - min_delta) * xor128() / 0xFFFFFFFFu;
 					dx *= (xor128() % 2 == 0 ? 1 : -1);
 					dy *= (xor128() % 2 == 0 ? 1 : -1);
 					P[tar].x = px + dx;
