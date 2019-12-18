@@ -21,7 +21,7 @@ for i in range(m):
 	edge.append([(x[a], y[a]), (x[b], y[b])])
 
 # Visualize
-fig = plt.figure(figsize=(5,5))
+fig = plt.figure(figsize=(4,4))
 ax = fig.add_axes([0.1,0.1,0.85,0.85])#add_subplot(1,1,1)
 xy_max = max(np.max(x), np.max(y)) + 1
 xy_min = min(np.min(x), np.min(y)) - 1
