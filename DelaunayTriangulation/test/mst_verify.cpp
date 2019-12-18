@@ -7,10 +7,10 @@ double dst(double x, double y, double xx, double yy) {
 
 double euclid_mst(const std::vector<double>& x,
 				  const std::vector<double>& y,
-				  std::vector<std::pair<size_t,size_t>>& edge)
+				  std::vector<delaunay::Edge>& edge)
 {
 	std::sort(edge.begin(), edge.end(),
-			  [&](const std::pair<size_t,size_t>& a, const std::pair<size_t,size_t>& b) {
+			  [&](const delaunay::Edge& a, const delaunay::Edge& b) {
 			  	double A = dst(x[a.first], y[a.first], x[a.second], y[a.second]);
 			  	double B = dst(x[b.first], y[b.first], x[b.second], y[b.second]);
 			  	return A < B;
@@ -48,12 +48,12 @@ int main() {
 	std::vector<double> x(n), y(n);
 	for (int i=0; i<n; ++i) std::cin >> x[i] >> y[i];
 	
-	std::vector<std::pair<size_t,size_t>> all;
-	for (size_t i=0; i<n; ++i) for (size_t j=i+1; j<n; ++j) all.push_back(std::pair<size_t,size_t>(i, j));
+	std::vector<delaunay::Edge> all;
+	for (size_t i=0; i<n; ++i) for (size_t j=i+1; j<n; ++j) all.push_back(delaunay::make_edge(i, j));
 	
 	delaunay::DelaunayTriangulation DT(x, y);
 	DT.execute();
-	std::vector<std::pair<size_t,size_t>> edge = DT.get_edges();
+	std::vector<delaunay::Edge> edge = DT.get_edges();
 	
 	double mst_all = euclid_mst(x, y, all);
 	double mst_DT = euclid_mst(x, y, edge);

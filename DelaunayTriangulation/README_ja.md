@@ -11,7 +11,7 @@ std::vector<double> x(n), y(n);
 ...
 delaunay::DelaunayTriangulation DT(x, y); // (std::vector<double> x, std::vector<double> y, uint32_t seed_)
 DT.execute(); // (double min_delta = 1e-5, double max_delta = 1e-2, int max_miss_count = 30)
-DT.dump(std::cout);
+std::vector<delaunay::Edge> edge = DT.get_edges();
 ```
 
 本実装では、同一直線上に 3 つ以上の点が存在していた場合に、処理の都合で一時的に点の座標を微小にランダム摂動する場合があります。その範囲を `min_delta, max_delta` で指定します。なお `max_miss_count` 回ランダム摂動しても不都合であった場合は、その点は無視されます。

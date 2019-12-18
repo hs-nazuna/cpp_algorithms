@@ -17,26 +17,28 @@
 
 namespace delaunay {
 
-class DelaunayTriangulation {	
-	struct Point {
-		/*** Point on the 2D-plane ***/
-		double x, y;
-		Point operator + (const Point& p) const { return Point{x + p.x, y + p.y}; }
-		Point operator - (const Point& p) const { return Point{x - p.x, y - p.y}; }
-		Point operator * (double d) const { return Point{x * d, y * d}; }
-		Point operator / (double d) const { return Point{x / d, y / d}; }
-		bool operator < (const Point& p) const { return x == p.x ? y < p.y : x < p.x; }
-		Point normal() const { return Point{y, -x}; }
-		double norm() const { return x * x + y + y; }
-	};
+struct Point {
+	/*** Point on the 2D-plane ***/
+	double x, y;
+	Point operator + (const Point& p) const { return Point{x + p.x, y + p.y}; }
+	Point operator - (const Point& p) const { return Point{x - p.x, y - p.y}; }
+	Point operator * (double d) const { return Point{x * d, y * d}; }
+	Point operator / (double d) const { return Point{x / d, y / d}; }
+	bool operator < (const Point& p) const { return x == p.x ? y < p.y : x < p.x; }
+	Point normal() const { return Point{y, -x}; }
+	double norm() const { return x * x + y + y; }
+};
+
+double dot(Point a, Point b) { return a.x * b.x + a.y * b.y; }
+double cross(Point a, Point b) { return a.x * b.y - a.y * b.x; }
+
+/*** Edge connecting two points ***/
+using Edge = std::pair<size_t, size_t>;
+Edge make_edge(size_t a, size_t b) { return Edge(std::min(a,b), std::max(a,b)); }
 	
-	double dot(Point a, Point b) const { return a.x * b.x + a.y * b.y; }
-	double cross(Point a, Point b) const { return a.x * b.y - a.y * b.x; }
+/*** Core Implementation ***/
+class DelaunayTriangulation {
 	bool is_ccw(size_t a, size_t b, size_t c) const { return cross(P[b] - P[a], P[c] - P[a]) > 0; }
-	
-	/*** Edge connecting two points ***/
-	using Edge = std::pair<size_t, size_t>;
-	Edge make_edge(size_t a, size_t b) const { return Edge(std::min(a,b), std::max(a,b)); }
 	
 	struct Triangle {
 		/*** Triangle on the 2D-plane ***/
@@ -258,7 +260,7 @@ public:
 	}
 	
 	void execute(double min_delta = 1e-5, double max_delta = 1e-2, int max_miss_count = 30) {
-		/*** Core algorithm ***/
+		/*** Execute the algorithm ***/
 		
 		// Random reordering
 		std::vector<size_t> id(n);
