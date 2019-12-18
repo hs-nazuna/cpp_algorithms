@@ -1,4 +1,4 @@
-#include "delaunay_triangulation.hpp"
+#include "../delaunay_triangulation.hpp"
 
 #include <sys/time.h>
 

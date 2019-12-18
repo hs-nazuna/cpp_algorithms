@@ -1,4 +1,4 @@
-#include "delaunay_triangulation.hpp"
+#include "../delaunay_triangulation.hpp"
 
 double dst(double x, double y, double xx, double yy) {
 	double dx = x - xx, dy = y - yy;
