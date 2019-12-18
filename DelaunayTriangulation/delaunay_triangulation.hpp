@@ -259,7 +259,7 @@ public:
 		seed = seed_;
 	}
 	
-	void execute(double min_delta = 1e-5, double max_delta = 1e-2, int max_miss_count = 30) {
+	void execute(double min_delta = 1e-6, double max_delta = 1e-5, int max_miss_count = 30) {
 		/*** Execute the algorithm ***/
 		
 		// Random reordering
