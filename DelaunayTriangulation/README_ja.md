@@ -10,7 +10,7 @@
 std::vector<double> x(n), y(n);
 ...
 delaunay::DelaunayTriangulation DT(x, y); // (std::vector<double> x, std::vector<double> y, uint32_t seed_)
-DT.execute(); // (double min_delta = 1e-5, double max_delta = 1e-2, int max_miss_count = 30)
+DT.execute(); // (double min_delta = 1e-6, double max_delta = 1e-5, int max_miss_count = 30)
 std::vector<delaunay::Edge> edge = DT.get_edges();
 ```
 
