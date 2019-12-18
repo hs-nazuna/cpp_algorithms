@@ -1,3 +1,5 @@
 # Expected Fastest Algorithm for Delaunay Triangulation
 
-**ENGLISH README IS UNDER CONSTRUCTION** (See README_ja.md)
+**ENGLISH README IS UNDER CONSTRUCTION**
+
+Japanese README is [README_ja.md](README_ja.md)
