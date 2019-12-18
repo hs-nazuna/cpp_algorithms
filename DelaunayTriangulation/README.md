@@ -2,4 +2,4 @@
 
 **ENGLISH README IS UNDER CONSTRUCTION**
 
-Japanese README is [README_ja.md](README_ja.md)
+Japanese README is [here](README_ja.md)
