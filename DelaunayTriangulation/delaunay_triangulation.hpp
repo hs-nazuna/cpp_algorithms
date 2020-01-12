@@ -26,7 +26,7 @@ struct Point {
 	Point operator / (double d) const { return Point{x / d, y / d}; }
 	bool operator < (const Point& p) const { return x == p.x ? y < p.y : x < p.x; }
 	Point normal() const { return Point{y, -x}; }
-	double norm() const { return x * x + y + y; }
+	double norm() const { return x * x + y * y; }
 };
 
 double dot(Point a, Point b) { return a.x * b.x + a.y * b.y; }

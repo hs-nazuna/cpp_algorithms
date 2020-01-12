@@ -5,7 +5,7 @@ do
 	for i in $(seq 1 1 100);
 	do
 		echo $x $i
-		python3 gen/gen.py $x 0 1000 > test_case
+		python3 ../gen/gen.py $x 0 1000 > test_case
 		./measure < test_case >> log
 	done
 
