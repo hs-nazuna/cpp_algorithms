@@ -15,7 +15,7 @@ private:
 		lint res = 1;
 		while (k) {
 			if (k&1) res = (res * x) % MOD;
-            x = (x * x) % MOD;
+			x = (x * x) % MOD;
 			k >>= 1;
 		}
 		return res;
@@ -29,32 +29,32 @@ private:
 	
 public:
 	Combination(int N_, lint MOD_) : N(N_), MOD(MOD_), fact(N_), inv(N_) {
-        precomputation();
-    }
+		precomputation();
+	}
 	
 	lint compute(int n, int k, bool duplicate = false) {
-        if (duplicate) return compute(n+k-1, k);
+		if (duplicate) return compute(n+k-1, k);
 		if (n < k) return 0;
 		lint res = fact[n];
-        res = (res * inv[n-k]) % MOD;
-        res = (res * inv[k]) % MOD;
+		res = (res * inv[n-k]) % MOD;
+		res = (res * inv[k]) % MOD;
 		return res;
 	}
 };
 
 int main() {
-    const lint MOD = (lint)1e9 + 7;
+	const lint MOD = (lint)1e9 + 7;
 
-    int n, k;
-    cin >> n >> k;
+	int n, k;
+	cin >> n >> k;
 
-    Combination comb(2 * n, MOD);
+	Combination comb(2 * n, MOD);
 
-    lint ans = 1;
-    for (int i=1; i<=min(n, k); ++i) {
-        lint add = comb.compute(n, i);
-        add = (add * comb.compute(n-i, i, true)) % MOD;
-        ans = (ans + add) % MOD;
-    }
-    cout << ans << endl;
+	lint ans = 1;
+	for (int i=1; i<=min(n, k); ++i) {
+		lint add = comb.compute(n, i);
+		add = (add * comb.compute(n-i, i, true)) % MOD;
+		ans = (ans + add) % MOD;
+	}
+	cout << ans << endl;
 }

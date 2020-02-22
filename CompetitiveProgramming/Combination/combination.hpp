@@ -15,7 +15,7 @@ private:
 		lint res = 1;
 		while (k) {
 			if (k&1) res = (res * x) % MOD;
-            x = (x * x) % MOD;
+			x = (x * x) % MOD;
 			k >>= 1;
 		}
 		return res;
@@ -29,15 +29,15 @@ private:
 	
 public:
 	Combination(int N_, lint MOD_) : N(N_), MOD(MOD_), fact(N_), inv(N_) {
-        precomputation();
-    }
+		precomputation();
+	}
 	
 	lint compute(int n, int k, bool duplicate = false) {
-        if (duplicate) return compute(n+k-1, k);
+		if (duplicate) return compute(n+k-1, k);
 		if (n < k) return 0;
 		lint res = fact[n];
-        res = (res * inv[n-k]) % MOD;
-        res = (res * inv[k]) % MOD;
+		res = (res * inv[n-k]) % MOD;
+		res = (res * inv[k]) % MOD;
 		return res;
 	}
 };
