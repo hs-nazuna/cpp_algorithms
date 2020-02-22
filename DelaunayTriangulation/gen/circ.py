@@ -8,6 +8,6 @@ print(k * n + 1)
 print(0, 0)
 
 for a in range(k):
-	r = a + 1
-	for i in range(n):
-		print(math.cos(2 * PI * i / n) * r, math.sin(2 * PI * i / n) * r)
+    r = a + 1
+    for i in range(n):
+        print(math.cos(2 * PI * i / n) * r, math.sin(2 * PI * i / n) * r)

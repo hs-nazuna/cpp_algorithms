@@ -8,17 +8,17 @@ f = open(sys.argv[1])
 n = int(f.readline())
 x, y = list(), list()
 for i in range(n):
-	xi, yi = map(float, f.readline().split())
-	x.append(xi)
-	y.append(yi)
+    xi, yi = map(float, f.readline().split())
+    x.append(xi)
+    y.append(yi)
 
 # Read output file
 f = open(sys.argv[2])
 m = int(f.readline())
 edge = list()
 for i in range(m):
-	a, b = map(int, f.readline().split())
-	edge.append([(x[a], y[a]), (x[b], y[b])])
+    a, b = map(int, f.readline().split())
+    edge.append([(x[a], y[a]), (x[b], y[b])])
 
 # Visualize
 fig = plt.figure(figsize=(4,4))
