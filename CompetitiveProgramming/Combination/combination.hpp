@@ -9,12 +9,12 @@ class Combination {
 private:
     const int N;
     const lint MOD;
-    std::vector< lint > fact, inv;
+    std::vector<lint> fact, inv;
     
     lint powmod(lint x, lint k) {
         lint res = 1;
         while (k) {
-            if (k&1) res = (res * x) % MOD;
+            if (k & 1) res = (res * x) % MOD;
             x = (x * x) % MOD;
             k >>= 1;
         }
@@ -28,12 +28,13 @@ private:
     }
     
 public:
-    Combination(int N_, lint MOD_) : N(N_), MOD(MOD_), fact(N_), inv(N_) {
+    Combination(int N, lint MOD) : N(N), MOD(MOD), fact(N + 1), inv(N + 1) {
         precomputation();
     }
     
     lint compute(int n, int k, bool duplicate = false) {
         if (duplicate) return compute(n+k-1, k);
+        if (k == 0) return 1;
         if (n < k) return 0;
         lint res = fact[n];
         res = (res * inv[n-k]) % MOD;
