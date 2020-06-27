@@ -41,6 +41,12 @@ public:
         res = (res * inv[k]) % MOD;
         return res;
     }
+
+    lint compute_P(int n, int k) {
+        if (k == 0) return 1;
+        if (n < k) return 0;
+        return (fact[n] * inv[n - k]) % MOD;
+    }
 };
 
 #endif
